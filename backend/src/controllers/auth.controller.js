@@ -47,10 +47,41 @@ export const signup = async(req, res) => {
     }
 }
 
-export const logout = (req, res) => {
-    res.send("logout");
+export const login = async(req, res) => {
+    const {email, password} = req.body;
+    try {
+        const user = await User.findOne({email});
+        if(!user){
+            res.status(400).json({message:"User not found"});
+            console.log("User not found");
+            return;
+        }
+        const isPasswordCorrect = await bcrypt.compare(password, user.password);
+        if(!isPasswordCorrect){
+            res.status(400).json({message:"Invalid password"});
+            console.log("Invalid password");
+            return;     
+        }
+        generateToken(user._id, res);
+        res.status(200).json({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            profilePic: user.profilePic
+        })
+
+    } catch (error) {
+        res.status(500).json({message:"Something went wrong in login controller"});
+        console.log(error);
+    }
 }
 
-export const login = (req, res) => {
-    res.send("login");
+export const logout = (req, res) => {
+    try {
+        res.cookie("jwt", "", {maxAge:0})
+        res.status(200).json({message:"Logout successful"})
+    } catch (error) {
+        res.status(500).json({message:"Something went wrong in logout controller"});
+        console.log(error);
+    }
 }

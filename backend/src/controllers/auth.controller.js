@@ -49,6 +49,11 @@ export const signup = async(req, res) => {
 
 export const login = async(req, res) => {
     const {email, password} = req.body;
+    
+    if(!email || !password) {
+        res.status(400).json("All fields are required");
+    }
+
     try {
         const user = await User.findOne({email});
         if(!user){
@@ -82,6 +87,42 @@ export const logout = (req, res) => {
         res.status(200).json({message:"Logout successful"})
     } catch (error) {
         res.status(500).json({message:"Something went wrong in logout controller"});
+        console.log(error);
+    }
+}
+
+export const updateProfilePic = async(req, res) => {
+    try {
+        const {profilePic} = req.body;
+        const userId = req.user._id;
+
+        if(!profilePic) {
+            return res.status(400).json({message:"Profile picture is required"});
+        }
+
+        const uploadResponse = await cloudinary.uploader.upload(profilePic);
+        const updatedUser = await User.findByIdAndUpdate(userId, {
+            profilePic: uploadResponse.secure_url
+        }, {new: true});
+
+        res.status(200).json({
+            _id: updatedUser._id,
+            username: updatedUser.username,
+            email: updatedUser.email,
+            profilePic: updatedUser.profilePic
+        })
+
+    } catch (error) {
+        res.status(500).json({message:"Something went wrong in updateProfilePic controller"});
+        console.log(error);
+    }
+}
+
+export const checkAuth = async(req, res) => {
+    try {
+        res.status(200).json(req.user);
+    } catch (error) {
+        res.status(500).json({message:"Something went wrong in checkAuth controller"});
         console.log(error);
     }
 }
